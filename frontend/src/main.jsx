@@ -1,0 +1,10 @@
+import React, { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import App from './App'
+import './styles.css'
+import './interactive.css'
+import './explainability.css'
+import './phase-two.css'
+import './clinical-enhancements.css'
+import './range-bar-fix.css'
+createRoot(document.getElementById('root')).render(<StrictMode><App /></StrictMode>)
