@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import os
 from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
@@ -18,10 +19,12 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="Clinical Lab Results Analyzer API", version="1.0.0", lifespan=lifespan)
+production_origins = [origin.strip() for origin in os.getenv("FRONTEND_ORIGIN", "").split(",") if origin.strip()]
 app.add_middleware(
     CORSMiddleware,
     # Vite selects the next available local port when 5173 is occupied.
     allow_origin_regex=r"http://(localhost|127\.0\.0\.1):\d+$",
+    allow_origins=production_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )

@@ -40,6 +40,18 @@ npm run dev
 
 Open the Vite URL, normally `http://localhost:5173`.
 
+## Deploy
+
+The project is ready for a split deployment: FastAPI on Render and the Vite dashboard on Vercel.
+
+1. Push this repository to GitHub. Do not commit `backend/.env`.
+2. In Render, choose **New → Blueprint** and select the repository. The included `render.yaml` creates the API service. Enter `GROQ_API_KEY` when Render prompts for it. After deployment, copy the API URL, for example `https://clinical-lab-results-api.onrender.com`.
+3. In Vercel, import the same repository. Set **Root Directory** to `frontend`, then add the environment variable `VITE_API_URL` with the Render API URL and deploy.
+4. Copy the Vercel deployment URL and set Render's `FRONTEND_ORIGIN` to that exact URL. Redeploy Render once. This authorizes browser requests from the deployed dashboard.
+5. Visit `https://your-render-url/health` and then analyse the mixed demo in the Vercel dashboard.
+
+The Groq key is configured only in Render; it is never placed in Vercel or frontend code.
+
 The dashboard/API already dispatches classification through the registered MCP tool interface; **do not run the MCP server directly in an ordinary PowerShell terminal**, because its standard input/output are reserved for JSON-RPC messages from an MCP client. To connect it to an MCP-capable client, use this configuration:
 
 ```json
