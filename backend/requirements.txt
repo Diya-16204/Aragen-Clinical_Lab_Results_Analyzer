@@ -1,0 +1,8 @@
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+pydantic>=2.8.0
+python-dotenv>=1.0.1
+google-genai>=1.0.0
+requests>=2.28.1
+# The MCP tool server uses the stable FastMCP 1.x API.
+mcp>=1.0.0,<2.0.0
