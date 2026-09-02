@@ -3,8 +3,9 @@ from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from agent.lab_agent import AIServiceError, UnknownLabError, analyze_labs
-from models.schemas import AnalyzeRequest, AnalyzeResponse
+from agent.lab_agent import AIServiceError, UnknownLabError, analyze_labs, tool_payload
+from models.schemas import AnalyzeRequest, AnalyzeResponse, AskAragenDocRequest, AskAragenDocResponse
+from mcp_server.server import mcp
 from reference_ranges import REFERENCE_RANGES
 
 # The project .env is the local runtime configuration source of truth.
@@ -49,3 +50,13 @@ async def analyze_labs_endpoint(request: AnalyzeRequest):
         raise HTTPException(status_code=422, detail=str(error)) from error
     except AIServiceError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
+
+
+@app.post("/ask_aragen_doc", response_model=AskAragenDocResponse)
+async def ask_aragen_doc_endpoint(request: AskAragenDocRequest):
+    response = await mcp.call_tool("ask_aragen_doc", {"question": request.question, "lab_results": [item.model_dump() for item in request.lab_results]})
+    payload = tool_payload(response)
+    activity = {"tool": "ask_aragen_doc", "status": "completed" if payload["ok"] else "failed", "details": f"Question: {request.question}"}
+    if not payload["ok"]:
+        raise HTTPException(status_code=503, detail={"message": payload["error"], "agent_activity": activity})
+    return {"answer": payload["answer"], "suggested_specialist": payload["suggested_specialist"], "safety_note": payload["safety_note"], "agent_activity": activity}

@@ -39,3 +39,23 @@ class AnalyzeResponse(BaseModel):
     results: list[LabResult]
     agent_activity: list[dict] = []
     overall_summary: dict
+
+
+class AskAragenDocRequest(BaseModel):
+    question: str = Field(min_length=1, max_length=1000)
+    lab_results: list[LabResult] = Field(min_length=1, max_length=30)
+
+    @field_validator("question")
+    @classmethod
+    def question_required(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("must not be blank")
+        return value
+
+
+class AskAragenDocResponse(BaseModel):
+    answer: str
+    suggested_specialist: str | None = None
+    safety_note: str
+    agent_activity: dict

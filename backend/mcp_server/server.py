@@ -1,7 +1,7 @@
 """MCP server exposing the deterministic lab tools to an MCP-capable client."""
 from mcp.server.fastmcp import FastMCP
 from reference_ranges import classify_value, lookup_range, units_match
-from services.gemini_service import AIConfigurationError, generate_explanation, generate_overall_summary as generate_overall_summary_text
+from services.gemini_service import AIConfigurationError, ask_aragen_doc as ask_aragen_doc_service, generate_explanation, generate_overall_summary as generate_overall_summary_text
 
 mcp = FastMCP("Clinical Lab Results Analyzer")
 
@@ -69,6 +69,15 @@ async def generate_overall_summary(results: list[dict]) -> dict:
         return {"ok": True, "summary": await generate_overall_summary_text(results)}
     except AIConfigurationError as error:
         return {"ok": False, "error": "Overall summary generation failed"}
+
+
+@mcp.tool()
+async def ask_aragen_doc(question: str, lab_results: list[dict]) -> dict:
+    """Answer an informational question about current analyzed results only."""
+    try:
+        return {"ok": True, **(await ask_aragen_doc_service(question, lab_results))}
+    except AIConfigurationError:
+        return {"ok": False, "error": "Aragen Doc is temporarily unavailable"}
 
 
 if __name__ == "__main__":
