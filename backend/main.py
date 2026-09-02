@@ -44,7 +44,7 @@ async def reference_ranges():
 @app.post("/analyze_labs", response_model=AnalyzeResponse)
 async def analyze_labs_endpoint(request: AnalyzeRequest):
     try:
-        results, activity, overall_summary = await analyze_labs([item.model_dump() for item in request.labs])
+        results, activity, overall_summary = await analyze_labs([item.model_dump() for item in request.labs], request.language)
         return {"results": results, "agent_activity": activity, "overall_summary": overall_summary}
     except UnknownLabError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
@@ -54,7 +54,7 @@ async def analyze_labs_endpoint(request: AnalyzeRequest):
 
 @app.post("/ask_aragen_doc", response_model=AskAragenDocResponse)
 async def ask_aragen_doc_endpoint(request: AskAragenDocRequest):
-    response = await mcp.call_tool("ask_aragen_doc", {"question": request.question, "lab_results": [item.model_dump() for item in request.lab_results]})
+    response = await mcp.call_tool("ask_aragen_doc", {"question": request.question, "lab_results": [item.model_dump() for item in request.lab_results], "language": request.language})
     payload = tool_payload(response)
     activity = {"tool": "ask_aragen_doc", "status": "completed" if payload["ok"] else "failed", "details": f"Question: {request.question}"}
     if not payload["ok"]:

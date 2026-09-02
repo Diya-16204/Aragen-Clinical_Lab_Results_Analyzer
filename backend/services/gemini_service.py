@@ -7,10 +7,15 @@ class AIConfigurationError(RuntimeError):
     """Raised when a required live LLM explanation cannot be produced."""
 
 
-async def generate_explanation(result: dict) -> tuple[str, str]:
+def language_instruction(language: str) -> str:
+    return "Write all natural-language fields in simple, patient-friendly Hindi using Devanagari script." if language == "hi" else "Write all natural-language fields in English."
+
+
+async def generate_explanation(result: dict, language: str = "en") -> tuple[str, str]:
     prompt = f'''You are a clinical decision-support writing assistant. Explain the fixed classification below.
 Do not diagnose. Do not change or invent reference ranges. Do not say this proves a disease.
 Return ONLY valid JSON with string fields "explanation" and "next_step". Keep each under 55 words.
+{language_instruction(language)} Preserve every supplied number, unit, reference range, and deterministic status exactly.
 Input: {json.dumps(result)}'''
     provider = os.getenv("AI_PROVIDER", "gemini").strip().lower()
     if provider == "groq":
@@ -20,11 +25,12 @@ Input: {json.dumps(result)}'''
     return _generate_with_gemini(prompt)
 
 
-async def generate_overall_summary(results: list[dict]) -> str:
+async def generate_overall_summary(results: list[dict], language: str = "en") -> str:
     """Create a narrative across fixed, already-classified lab results."""
     prompt = f'''You are a clinical decision-support writing assistant. Write one concise overall analysis summary for the provided, already-classified lab results.
 Use only supplied facts. Do not change classifications, invent ranges, history, symptoms, diagnoses, medications, or values. Do not name or imply any disease (for example, do not write anemia, diabetes, renal failure, or infection). Describe only the measured finding and deterministic severity. Prioritize CRITICAL findings, then WARNING findings, and distinguish normal findings. Recommend clinical review/follow-up rather than unsafe instructions. End with: "Informational decision support; not a substitute for professional clinical judgment."
 Return ONLY valid JSON: {{"summary":"..."}}.
+{language_instruction(language)} Preserve every supplied number, unit, reference range, and deterministic status exactly.
 Results: {json.dumps(results)}'''
     provider = os.getenv("AI_PROVIDER", "gemini").strip().lower()
     try:
@@ -39,15 +45,18 @@ Results: {json.dumps(results)}'''
         raise AIConfigurationError(f"Overall summary generation failed: {error}") from error
 
 
-async def ask_aragen_doc(question: str, lab_results: list[dict]) -> dict:
+async def ask_aragen_doc(question: str, lab_results: list[dict], language: str = "en") -> dict:
     """Answer a constrained informational question using current analyzed results only."""
-    blocked = ("medicine", "medication", "drug", "dose", "dosage", "prescribe", "change my", "change the status")
+    blocked = ("medicine", "medication", "drug", "dose", "dosage", "prescribe", "change my", "change the status", "दवा", "खुराक", "स्थिति बदल")
     if any(term in question.lower() for term in blocked):
+        if language == "hi":
+            return {"answer": "मैं केवल लैब परिणामों के आधार पर दवा या उसकी खुराक नहीं बता सकता। कृपया योग्य स्वास्थ्य-विशेषज्ञ से परामर्श करें। इस ऐप के वर्गीकरण नियम-आधारित संदर्भ सीमाओं से तय होते हैं और इन्हें बदला नहीं जा सकता।", "suggested_specialist": None, "safety_note": "यह केवल जानकारी है; यह निदान, पर्चा या उपचार योजना नहीं है।"}
         return {"answer": "I cannot prescribe medication or dosages based on laboratory results alone. Please consult a qualified healthcare professional. The application's classifications are determined by rule-based reference ranges and cannot be changed by this assistant.", "suggested_specialist": None, "safety_note": "Informational guidance only; not a diagnosis, prescription, or treatment plan."}
     prompt = f'''You are Aragen Doc, an AI-powered laboratory-results information assistant. Use ONLY the provided laboratory context.
 Explain what supplied abnormal values can generally indicate without diagnosing. You may suggest a relevant type of specialist and questions to ask a doctor. Do not prescribe medications, doses, treatment changes, diagnoses, or invent facts. Do not alter Normal/Warning/Critical classification. Clearly distinguish supplied abnormal and normal findings.
 Return ONLY valid JSON with strings: "answer", "suggested_specialist", "safety_note". safety_note must state that this is informational and not a diagnosis or prescription.
 Question: {question}
+{language_instruction(language)} Preserve every supplied number, unit, reference range, and deterministic status exactly.
 Current analyzed results: {json.dumps(lab_results)}'''
     provider = os.getenv("AI_PROVIDER", "gemini").strip().lower()
     try:

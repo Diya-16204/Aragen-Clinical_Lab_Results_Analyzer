@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -18,6 +20,7 @@ class LabInput(BaseModel):
 
 class AnalyzeRequest(BaseModel):
     labs: list[LabInput] = Field(min_length=1, max_length=30)
+    language: Literal["en", "hi"] = "en"
 
 
 class LabResult(BaseModel):
@@ -44,6 +47,7 @@ class AnalyzeResponse(BaseModel):
 class AskAragenDocRequest(BaseModel):
     question: str = Field(min_length=1, max_length=1000)
     lab_results: list[LabResult] = Field(min_length=1, max_length=30)
+    language: Literal["en", "hi"] = "en"
 
     @field_validator("question")
     @classmethod

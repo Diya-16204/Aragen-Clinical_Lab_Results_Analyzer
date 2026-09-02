@@ -35,7 +35,7 @@ def tool_payload(response: object) -> dict:
     return response if isinstance(response, dict) else json.loads(response[0].text)
 
 
-async def analyze_labs(labs: list[dict]) -> tuple[list[dict], list[dict], dict]:
+async def analyze_labs(labs: list[dict], language: str = "en") -> tuple[list[dict], list[dict], dict]:
     classified = []
     activity = []
     for lab in labs:
@@ -58,7 +58,7 @@ async def analyze_labs(labs: list[dict]) -> tuple[list[dict], list[dict], dict]:
     classified.sort(key=lambda item: ORDER[item["status"]])  # ROUTE
     activity.append({"tool": "severity_routing", "status": "completed", "details": "Results sorted: Critical → Warning → Normal"})
     for result in classified:  # EXPLAIN through MCP; classification is already fixed
-        response = await mcp.call_tool("explain_lab_result", result)
+        response = await mcp.call_tool("explain_lab_result", {**result, "language": language})
         explanation_result = tool_payload(response)
         if not explanation_result["ok"]:
             result["explanation"] = "Live LLM clinical context is temporarily unavailable. The deterministic classification and reference range remain valid decision-support information."
@@ -68,7 +68,7 @@ async def analyze_labs(labs: list[dict]) -> tuple[list[dict], list[dict], dict]:
         result["explanation"] = explanation_result["explanation"]
         result["next_step"] = explanation_result["next_step"]
         activity.append({"tool": "explain_lab_result", "status": "completed", "details": f"{result['test_name']}: Groq LLM explanation generated"})
-    summary_response = await mcp.call_tool("generate_overall_summary", {"results": classified})
+    summary_response = await mcp.call_tool("generate_overall_summary", {"results": classified, "language": language})
     summary_result = tool_payload(summary_response)
     if summary_result["ok"]:
         overall_summary = {"status": "success", "text": summary_result["summary"], "generated_by": "Groq"}

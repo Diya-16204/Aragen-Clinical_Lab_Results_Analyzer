@@ -1,0 +1,3 @@
+.language-selector{display:flex;align-items:center;gap:6px;margin-left:auto;color:#55716a;font-size:11px;font-weight:700}
+.language-selector select{border:1px solid #bdd7cf;background:#f4faf7;color:#166e5e;border-radius:8px;padding:7px 24px 7px 9px;font:600 12px 'DM Sans';cursor:pointer}
+@media(max-width:760px){.language-selector{margin-left:auto}.language-selector select{max-width:92px}}

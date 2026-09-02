@@ -52,30 +52,30 @@ def classify_lab_result(test_name: str, value: float, unit: str) -> dict:
 
 
 @mcp.tool()
-async def explain_lab_result(test_name: str, value: float, unit: str, status: str, reference_range: str) -> dict:
+async def explain_lab_result(test_name: str, value: float, unit: str, status: str, reference_range: str, language: str = "en") -> dict:
     """Use Gemini to explain a pre-classified result without changing its status."""
     result = {"test_name": test_name, "value": value, "unit": unit, "status": status, "reference_range": reference_range}
     try:
-        explanation, next_step = await generate_explanation(result)
+        explanation, next_step = await generate_explanation(result, language)
         return {"ok": True, "explanation": explanation, "next_step": next_step}
     except AIConfigurationError as error:
         return {"ok": False, "error": str(error)}
 
 
 @mcp.tool()
-async def generate_overall_summary(results: list[dict]) -> dict:
+async def generate_overall_summary(results: list[dict], language: str = "en") -> dict:
     """Use the LLM to narrate an already-classified complete lab result set."""
     try:
-        return {"ok": True, "summary": await generate_overall_summary_text(results)}
+        return {"ok": True, "summary": await generate_overall_summary_text(results, language)}
     except AIConfigurationError as error:
         return {"ok": False, "error": "Overall summary generation failed"}
 
 
 @mcp.tool()
-async def ask_aragen_doc(question: str, lab_results: list[dict]) -> dict:
+async def ask_aragen_doc(question: str, lab_results: list[dict], language: str = "en") -> dict:
     """Answer an informational question about current analyzed results only."""
     try:
-        return {"ok": True, **(await ask_aragen_doc_service(question, lab_results))}
+        return {"ok": True, **(await ask_aragen_doc_service(question, lab_results, language))}
     except AIConfigurationError:
         return {"ok": False, "error": "Aragen Doc is temporarily unavailable"}
 
