@@ -7,7 +7,6 @@ import './explainability.css'
 import './phase-two.css'
 import './clinical-enhancements.css'
 import './range-bar-fix.css'
-
 import './ai-summary.css'
 import './ask-aragen-doc.css'
 import './language-selector.css'
