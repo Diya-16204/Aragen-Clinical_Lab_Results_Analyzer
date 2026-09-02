@@ -36,6 +36,23 @@ The key design choice is intentional: **the LLM never determines the clinical st
 - Visual analytics, severity summaries, range visualizations, and dated trend history.
 - CSV export, Print / Save PDF, reference glossary, and demo presets.
 
+## 🌟 Why this project stands out
+
+Many lab-result demos use an LLM as the decision-maker. This project deliberately separates the deterministic clinical-support layer from the AI explanation layer.
+
+- **Deterministic by design:** Normal, Warning, and Critical statuses always come from transparent fixed reference rules—not the LLM.
+- **Real MCP execution:** the MCP Activity panel reflects actual backend tool calls for range lookup, classification, severity routing, explanation, and summary generation.
+- **Visible explainability:** every finding includes its reference range, high/low direction, deterministic reason, and AI-supported context.
+- **Bilingual experience:** English and Hindi explanations can be switched live without re-entering laboratory values or modifying classifications.
+- **Constrained Ask Aragen Doc:** answers use the currently analyzed results, can suggest an appropriate specialist informationally, and refuse medication, dosage, and classification-change requests.
+- **CSV-aware workflow:** supports simple CSV files as well as Kaggle-style `Test_Name` / `Result` / `Unit` files with selectable row ranges and unsupported-row handling.
+- **Demo and presentation polish:** demo presets, severity filters, charts, range bars, trend history, glossary, CSV export, and Print / Save PDF are included.
+- **Production deployment:** the React dashboard is deployed on Vercel, FastAPI runs on Render, browser access is restricted through CORS, and the Groq key remains backend-only.
+
+**One-line pitch:**
+
+> Unlike a typical AI lab analyzer, this project keeps clinical classification deterministic and explainable through MCP tools, while Groq is limited to multilingual, patient-friendly explanation and safe follow-up guidance.
+
 ## 🧭 Product flow
 
 ```text
@@ -233,6 +250,17 @@ npm run build
 ```
 
 Tests cover deterministic normal, warning, critical, invalid-unit, unknown-test, and Ask Aragen Doc medication-safety cases.
+
+### Light-load deployment validation
+
+A bounded production check was run against the deployed Render API using synthetic data:
+
+| Check | Result |
+| --- | --- |
+| 20 concurrent `GET /health` requests | 20/20 returned `200 OK` in 6.57 seconds |
+| 3 simultaneous `POST /analyze_labs` requests | 3/3 returned `200 OK` in 5.28 seconds |
+
+This validates the deployed API under a small burst of traffic, including the FastAPI → MCP → Groq analysis path. It is not an enterprise-scale benchmark: the public demo runs on a single free Render instance and depends on Groq provider limits.
 
 ## 🚢 Deployment
 
