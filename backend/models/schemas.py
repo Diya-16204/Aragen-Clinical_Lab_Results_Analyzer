@@ -38,3 +38,4 @@ class LabResult(BaseModel):
 class AnalyzeResponse(BaseModel):
     results: list[LabResult]
     agent_activity: list[dict] = []
+    overall_summary: dict

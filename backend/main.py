@@ -43,8 +43,8 @@ async def reference_ranges():
 @app.post("/analyze_labs", response_model=AnalyzeResponse)
 async def analyze_labs_endpoint(request: AnalyzeRequest):
     try:
-        results, activity = await analyze_labs([item.model_dump() for item in request.labs])
-        return {"results": results, "agent_activity": activity}
+        results, activity, overall_summary = await analyze_labs([item.model_dump() for item in request.labs])
+        return {"results": results, "agent_activity": activity, "overall_summary": overall_summary}
     except UnknownLabError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
     except AIServiceError as error:

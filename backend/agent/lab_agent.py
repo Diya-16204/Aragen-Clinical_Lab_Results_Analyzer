@@ -35,7 +35,7 @@ def tool_payload(response: object) -> dict:
     return response if isinstance(response, dict) else json.loads(response[0].text)
 
 
-async def analyze_labs(labs: list[dict]) -> tuple[list[dict], list[dict]]:
+async def analyze_labs(labs: list[dict]) -> tuple[list[dict], list[dict], dict]:
     classified = []
     activity = []
     for lab in labs:
@@ -68,4 +68,12 @@ async def analyze_labs(labs: list[dict]) -> tuple[list[dict], list[dict]]:
         result["explanation"] = explanation_result["explanation"]
         result["next_step"] = explanation_result["next_step"]
         activity.append({"tool": "explain_lab_result", "status": "completed", "details": f"{result['test_name']}: Groq LLM explanation generated"})
-    return classified, activity
+    summary_response = await mcp.call_tool("generate_overall_summary", {"results": classified})
+    summary_result = tool_payload(summary_response)
+    if summary_result["ok"]:
+        overall_summary = {"status": "success", "text": summary_result["summary"], "generated_by": "Groq"}
+        activity.append({"tool": "generate_overall_summary", "status": "completed", "details": "Groq overall analysis summary generated"})
+    else:
+        overall_summary = {"status": "failed", "text": None, "error": "Overall summary generation failed"}
+        activity.append({"tool": "generate_overall_summary", "status": "failed", "details": "Overall summary generation failed"})
+    return classified, activity, overall_summary

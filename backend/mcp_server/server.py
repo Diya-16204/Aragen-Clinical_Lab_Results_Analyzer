@@ -1,7 +1,7 @@
 """MCP server exposing the deterministic lab tools to an MCP-capable client."""
 from mcp.server.fastmcp import FastMCP
 from reference_ranges import classify_value, lookup_range, units_match
-from services.gemini_service import AIConfigurationError, generate_explanation
+from services.gemini_service import AIConfigurationError, generate_explanation, generate_overall_summary as generate_overall_summary_text
 
 mcp = FastMCP("Clinical Lab Results Analyzer")
 
@@ -60,6 +60,15 @@ async def explain_lab_result(test_name: str, value: float, unit: str, status: st
         return {"ok": True, "explanation": explanation, "next_step": next_step}
     except AIConfigurationError as error:
         return {"ok": False, "error": str(error)}
+
+
+@mcp.tool()
+async def generate_overall_summary(results: list[dict]) -> dict:
+    """Use the LLM to narrate an already-classified complete lab result set."""
+    try:
+        return {"ok": True, "summary": await generate_overall_summary_text(results)}
+    except AIConfigurationError as error:
+        return {"ok": False, "error": "Overall summary generation failed"}
 
 
 if __name__ == "__main__":
